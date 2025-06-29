@@ -16,8 +16,8 @@ const assetRoutes = require('./routes/assetRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 
-// Import middleware
-const authMiddleware = require('./middleware/authMiddleware.js');
+// Import middleware - destructure the specific middleware functions we need
+const { protect } = require('./middleware/authMiddleware.js');
 const errorHandler = require('./middleware/errorHandler.js');
 
 // Load environment variables
@@ -31,16 +31,16 @@ app.use(helmet());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 10000, // 150 minutes
+  max: 300, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
 
 // Auth rate limiting (more restrictive)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth requests per windowMs
+  windowMs: 15 * 60 * 10000, // 150 minutes
+  max: 105, // limit each IP to 5 auth requests per windowMs
   message: 'Too many authentication attempts, please try again later.'
 });
 
@@ -107,12 +107,12 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/users', authMiddleware, userRoutes);
-app.use('/api/threats', authMiddleware, threatRoutes);
-app.use('/api/vulnerabilities', authMiddleware, vulnerabilityRoutes);
-app.use('/api/assets', authMiddleware, assetRoutes);
-app.use('/api/alerts', authMiddleware, alertRoutes);
-app.use('/api/reports', authMiddleware, reportRoutes);
+app.use('/api/users', protect, userRoutes); // Fixed: use protect middleware function
+app.use('/api/threats', protect, threatRoutes); // Fixed: use protect middleware function
+app.use('/api/vulnerabilities', protect, vulnerabilityRoutes); // Fixed: use protect middleware function
+app.use('/api/assets', protect, assetRoutes); // Fixed: use protect middleware function
+app.use('/api/alerts', protect, alertRoutes); // Fixed: use protect middleware function
+app.use('/api/reports', protect, reportRoutes); // Fixed: use protect middleware function
 
 // 404 handler
 app.use('*', (req, res) => {

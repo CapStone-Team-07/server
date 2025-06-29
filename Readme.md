@@ -247,10 +247,12 @@ curl -X GET http://localhost:5000/api/threats \
 
 ### 5. Create Threat
 ```bash
+# Include other fields too
 curl -X POST http://localhost:5000/api/threats \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
+    "threatId": "THREAT-9999",
     "title": "Malware Detection",
     "description": "Suspicious malware activity detected",
     "severity": "High",

@@ -7,7 +7,7 @@ const assetSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    match: /^AST-\d{4}$/
+    // match: /^AST-\d{4}$/ 
   },
   name: {
     type: String,

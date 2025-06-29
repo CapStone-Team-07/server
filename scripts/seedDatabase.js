@@ -73,6 +73,26 @@ const users = [
     role: 'soc_analyst',
     isActive: true,
     isEmailVerified: true
+  },
+  {
+    username: 'Fidan',
+    email: 'fidan_huseynova@cybersec.com',
+    password: 'password123',
+    firstName: 'Fidan',
+    lastName: 'Huseynova',
+    role: 'soc_analyst',
+    isActive: true,
+    isEmailVerified: true
+  },
+  {
+    username: 'Altun',
+    email: 'altun_tarverdiyev@cybersec.com',
+    password: 'password123',
+    firstName: 'Altun',
+    lastName: 'Tarverdiyev',
+    role: 'soc_analyst',
+    isActive: true,
+    isEmailVerified: true
   }
 ];
 

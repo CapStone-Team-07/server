@@ -1,13 +1,12 @@
-// models/Threat.js - Complete Threat Model
+// models/Threat.js - Fixed Threat Model
 const mongoose = require('mongoose');
 
 const threatSchema = new mongoose.Schema({
   // Basic Information
   threatId: {
     type: String,
-    required: true,
     unique: true,
-    match: /^THR-\d{6}$/
+    // match: /^THR-\d{6}$/ 
   },
   title: {
     type: String,
@@ -158,12 +157,30 @@ const threatSchema = new mongoose.Schema({
   
   // IOCs (Indicators of Compromise)
   iocs: {
-    ipAddresses: [String],
-    domains: [String],
-    urls: [String],
-    fileHashes: [String],
-    emailAddresses: [String],
-    fileNames: [String]
+    ipAddresses: {
+      type: [String],
+      default: []
+    },
+    domains: {
+      type: [String],
+      default: []
+    },
+    urls: {
+      type: [String],
+      default: []
+    },
+    fileHashes: {
+      type: [String],
+      default: []
+    },
+    emailAddresses: {
+      type: [String],
+      default: []
+    },
+    fileNames: {
+      type: [String],
+      default: []
+    }
   },
   iocsCount: {
     type: Number,
@@ -280,7 +297,10 @@ const threatSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  tags: [String],
+  tags: {
+    type: [String],
+    default: []
+  },
   
   // Related Threats
   relatedThreats: [{
@@ -457,21 +477,39 @@ threatSchema.virtual('isActive').get(function() {
 
 threatSchema.virtual('totalIOCs').get(function() {
   if (!this.iocs) return 0;
-  return Object.values(this.iocs).reduce((total, arr) => total + (Array.isArray(arr) ? arr.length : 0), 0);
+  return Object.values(this.iocs).reduce((total, arr) => {
+    return total + (Array.isArray(arr) ? arr.length : 0);
+  }, 0);
 });
 
-// Pre-save middleware
-threatSchema.pre('save', function(next) {
+// Pre-save middleware to auto-generate threatId
+threatSchema.pre('save', async function(next) {
   // Auto-generate threatId if not provided
   if (!this.threatId && this.isNew) {
-    // This would typically be handled by a counter or sequence
-    this.threatId = `THR-${String(Date.now()).slice(-6)}`;
+    try {
+      // Find the last threat to determine the next ID
+      const lastThreat = await this.constructor.findOne({}, {}, { sort: { 'threatId': -1 } });
+      
+      let nextNumber = 1;
+      if (lastThreat && lastThreat.threatId) {
+        const match = lastThreat.threatId.match(/THR-(\d{6})/);
+        if (match) {
+          nextNumber = parseInt(match[1]) + 1;
+        }
+      }
+      
+      this.threatId = `THR-${nextNumber.toString().padStart(6, '0')}`;
+    } catch (error) {
+      return next(error);
+    }
   }
   
   // Update iocsCount
-  this.iocsCount = this.totalIOCs;
+  if (this.iocs) {
+    this.iocsCount = this.totalIOCs;
+  }
   
-  // Update lastActivity on any change
+  // Update lastActivity on any change (except for new documents)
   if (!this.isNew) {
     this.lastActivity = new Date();
   }
@@ -550,6 +588,19 @@ threatSchema.methods.addWatcher = function(userId, preferences = {}) {
   return this.save();
 };
 
+threatSchema.methods.addIOC = function(type, value) {
+  if (!this.iocs[type]) {
+    this.iocs[type] = [];
+  }
+  
+  if (!this.iocs[type].includes(value)) {
+    this.iocs[type].push(value);
+    this.iocsCount = this.totalIOCs;
+  }
+  
+  return this.save();
+};
+
 // Static methods
 threatSchema.statics.findByAnalyst = function(analystId, status = null) {
   const query = { analyst: analystId };
@@ -575,20 +626,40 @@ threatSchema.statics.findByDateRange = function(startDate, endDate) {
   }).sort({ firstSeen: -1 });
 };
 
-threatSchema.statics.getStatsByAnalyst = function(analystId) {
+threatSchema.statics.getStatistics = function(filter = {}) {
   return this.aggregate([
-    { $match: { analyst: mongoose.Types.ObjectId(analystId) } },
+    { $match: filter },
     {
       $group: {
-        _id: '$status',
-        count: { $sum: 1 },
-        avgRiskScore: { $avg: '$riskScore' }
+        _id: null,
+        total: { $sum: 1 },
+        active: {
+          $sum: { $cond: [{ $in: ['$status', ['Active', 'Investigating', 'Escalated']] }, 1, 0] }
+        },
+        resolved: {
+          $sum: { $cond: [{ $eq: ['$status', 'Resolved'] }, 1, 0] }
+        },
+        critical: {
+          $sum: { $cond: [{ $eq: ['$severity', 'Critical'] }, 1, 0] }
+        },
+        high: {
+          $sum: { $cond: [{ $eq: ['$severity', 'High'] }, 1, 0] }
+        },
+        medium: {
+          $sum: { $cond: [{ $eq: ['$severity', 'Medium'] }, 1, 0] }
+        },
+        low: {
+          $sum: { $cond: [{ $eq: ['$severity', 'Low'] }, 1, 0] }
+        },
+        avgRiskScore: { $avg: '$riskScore' },
+        avgConfidence: { $avg: '$confidence' },
+        totalAffectedAssets: { $sum: '$affectedAssets' }
       }
     }
   ]);
 };
 
-threatSchema.statics.getTrendData = function(days = 30) {
+threatSchema.statics.getTrending = function(days = 7) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
   
@@ -597,15 +668,33 @@ threatSchema.statics.getTrendData = function(days = 30) {
     {
       $group: {
         _id: {
-          date: { $dateToString: { format: '%Y-%m-%d', date: '$firstSeen' } },
+          category: '$category',
           severity: '$severity'
         },
-        count: { $sum: 1 }
+        count: { $sum: 1 },
+        avgRiskScore: { $avg: '$riskScore' }
       }
     },
-    { $sort: { '_id.date': 1 } }
+    { $sort: { count: -1 } },
+    { $limit: 10 }
   ]);
 };
 
-// Export the model
+threatSchema.statics.getTopSourceIPs = function(limit = 10, filter = {}) {
+  return this.aggregate([
+    { $match: filter },
+    {
+      $group: {
+        _id: '$sourceIP',
+        count: { $sum: 1 },
+        severities: { $push: '$severity' },
+        countries: { $addToSet: '$country' },
+        latestActivity: { $max: '$lastActivity' }
+      }
+    },
+    { $sort: { count: -1 } },
+    { $limit: limit }
+  ]);
+};
+
 module.exports = mongoose.model('Threat', threatSchema);

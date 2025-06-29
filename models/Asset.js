@@ -1,4 +1,4 @@
-// models/Asset.js - Asset Management Model
+// models/Asset.js - Updated Asset Management Model for Network Monitoring
 const mongoose = require('mongoose');
 
 const assetSchema = new mongoose.Schema({
@@ -19,9 +19,9 @@ const assetSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
-      'Web Server', 'Database Server', 'Domain Controller', 'Email Server',
-      'Firewall', 'Router', 'Switch', 'Workstation', 'Mobile Device',
-      'Cloud Instance', 'Container', 'IoT Device', 'Network Printer', 'VPN Gateway'
+      'firewall', 'switch', 'router', 'workstation', 'server', 
+      'mobile_device', 'printer', 'cloud_instance', 'container', 
+      'iot_device', 'vpn_gateway', 'access_point'
     ]
   },
   
@@ -45,18 +45,35 @@ const assetSchema = new mongoose.Schema({
       message: 'Invalid MAC address format'
     }
   },
+  hostname: {
+    type: String,
+    trim: true
+  },
+  
+  // Network Topology - Connections to other assets
+  connections: [{
+    type: String, // Asset IDs or names that this asset is connected to
+    required: false
+  }],
+  
+  // Position for topology visualization
+  position: {
+    x: {
+      type: Number,
+      default: 0
+    },
+    y: {
+      type: Number,
+      default: 0
+    }
+  },
   
   // System Information
   operatingSystem: {
     type: String,
-    required: true,
     trim: true
   },
   osVersion: {
-    type: String,
-    trim: true
-  },
-  hostname: {
     type: String,
     trim: true
   },
@@ -84,8 +101,8 @@ const assetSchema = new mongoose.Schema({
   // Status and Monitoring
   status: {
     type: String,
-    enum: ['Online', 'Offline', 'Warning', 'Maintenance', 'Decommissioned'],
-    default: 'Online'
+    enum: ['online', 'offline', 'warning', 'maintenance', 'decommissioned'],
+    default: 'online'
   },
   lastSeen: {
     type: Date,
@@ -93,17 +110,16 @@ const assetSchema = new mongoose.Schema({
     default: Date.now
   },
   uptime: {
-    type: Number, // percentage
+    type: Number, // days
     min: 0,
-    max: 100,
-    default: 100
+    default: 0
   },
   
   // Security Assessment
   criticality: {
     type: String,
-    enum: ['Critical', 'High', 'Medium', 'Low'],
-    default: 'Medium'
+    enum: ['critical', 'high', 'medium', 'low'],
+    default: 'medium'
   },
   securityScore: {
     type: Number,
@@ -119,8 +135,64 @@ const assetSchema = new mongoose.Schema({
   },
   riskLevel: {
     type: String,
-    enum: ['Very Low', 'Low', 'Medium', 'High', 'Critical'],
-    default: 'Medium'
+    enum: ['very_low', 'low', 'medium', 'high', 'critical'],
+    default: 'medium'
+  },
+  
+  // Real-time Performance Metrics (as shown in AssetsMonitored component)
+  metadata: {
+    // Performance metrics
+    cpu: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0
+    },
+    memory: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0
+    },
+    storage: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0
+    },
+    networkLoad: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0
+    },
+    
+    // Network-specific metrics
+    throughput: String, // e.g., "150 Mbps"
+    bandwidth: String,  // e.g., "1 Gbps"
+    connectedDevices: Number,
+    activeports: Number,
+    
+    // Device-specific information
+    manufacturer: String,
+    model: String,
+    serialNumber: String,
+    firmware: String,
+    version: String,
+    
+    // Security-specific metadata
+    rules: Number, // For firewalls
+    ports: Number, // For switches/routers
+    
+    // User information (for workstations)
+    user: String,
+    domain: String,
+    lastLogin: String,
+    
+    // Additional flexible metadata
+    warrantyExpiry: Date,
+    lastMaintenanceDate: Date,
+    nextMaintenanceDate: Date
   },
   
   // Vulnerability Information
@@ -156,17 +228,6 @@ const assetSchema = new mongoose.Schema({
     default: 0
   },
   
-  // Hardware Information
-  hardware: {
-    manufacturer: String,
-    model: String,
-    serialNumber: String,
-    cpu: String,
-    memory: String,
-    storage: String,
-    warrantyExpiry: Date
-  },
-  
   // Software Information
   software: [{
     name: {
@@ -200,8 +261,8 @@ const assetSchema = new mongoose.Schema({
     },
     status: {
       type: String,
-      enum: ['Running', 'Stopped', 'Failed'],
-      default: 'Running'
+      enum: ['running', 'stopped', 'failed'],
+      default: 'running'
     },
     version: String
   }],
@@ -215,8 +276,8 @@ const assetSchema = new mongoose.Schema({
       lastUpdate: Date,
       status: {
         type: String,
-        enum: ['Active', 'Inactive', 'Outdated', 'Unknown'],
-        default: 'Unknown'
+        enum: ['active', 'inactive', 'outdated', 'unknown'],
+        default: 'unknown'
       }
     },
     firewall: {
@@ -248,7 +309,7 @@ const assetSchema = new mongoose.Schema({
       name: String,
       status: {
         type: String,
-        enum: ['Compliant', 'Non-Compliant', 'Partial', 'Unknown']
+        enum: ['compliant', 'non_compliant', 'partial', 'unknown']
       },
       lastAssessment: Date,
       score: Number
@@ -257,7 +318,7 @@ const assetSchema = new mongoose.Schema({
       name: String,
       status: {
         type: String,
-        enum: ['Compliant', 'Non-Compliant', 'Exempt']
+        enum: ['compliant', 'non_compliant', 'exempt']
       },
       lastCheck: Date
     }]
@@ -272,26 +333,6 @@ const assetSchema = new mongoose.Schema({
     resolved: Boolean,
     resolutionDate: Date
   }],
-  
-  // Configuration Management
-  configuration: {
-    baseline: {
-      type: mongoose.Schema.Types.Mixed,
-      default: {}
-    },
-    current: {
-      type: mongoose.Schema.Types.Mixed,
-      default: {}
-    },
-    driftDetected: {
-      type: Boolean,
-      default: false
-    },
-    lastConfigScan: {
-      type: Date,
-      default: null
-    }
-  },
   
   // Asset Lifecycle
   lifecycle: {
@@ -319,42 +360,63 @@ const assetSchema = new mongoose.Schema({
   businessFunction: String,
   dataClassification: {
     type: String,
-    enum: ['Public', 'Internal', 'Confidential', 'Restricted'],
-    default: 'Internal'
-  },
-  
-  // Monitoring and Metrics
-  metrics: {
-    cpuUsage: { type: Number, min: 0, max: 100 },
-    memoryUsage: { type: Number, min: 0, max: 100 },
-    diskUsage: { type: Number, min: 0, max: 100 },
-    networkTraffic: Number,
-    lastMetricsUpdate: Date
+    enum: ['public', 'internal', 'confidential', 'restricted'],
+    default: 'internal'
   },
   
   // Discovery Information
   discoveryMethod: {
     type: String,
-    enum: ['Network Scan', 'Agent', 'Manual', 'Import', 'CMDB Sync'],
-    default: 'Network Scan'
+    enum: ['network_scan', 'agent', 'manual', 'import', 'cmdb_sync'],
+    default: 'network_scan'
   },
   discoveredBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
   
-  // Asset Relationships
+  // Asset Dependencies (for network topology)
   dependencies: [{
     assetId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Asset'
+      type: String, // Can be assetId or mongoose ObjectId
+      required: true
     },
     relationship: {
       type: String,
-      enum: ['Depends On', 'Supports', 'Connected To', 'Hosted On']
+      enum: ['depends_on', 'supports', 'connected_to', 'hosted_on'],
+      required: true
     },
     description: String
   }],
+  
+  // Monitoring Configuration
+  monitoring: {
+    enabled: { type: Boolean, default: true },
+    intervals: {
+      heartbeat: { type: Number, default: 30 }, // seconds
+      performance: { type: Number, default: 300 }, // seconds
+      vulnerability: { type: Number, default: 86400 } // seconds (daily)
+    },
+    thresholds: {
+      cpu: { type: Number, default: 80 },
+      memory: { type: Number, default: 85 },
+      storage: { type: Number, default: 90 },
+      network: { type: Number, default: 75 }
+    }
+  },
+  
+  // Alert Configuration
+  alerts: {
+    enabled: { type: Boolean, default: true },
+    notifications: [{
+      type: {
+        type: String,
+        enum: ['email', 'sms', 'webhook', 'slack']
+      },
+      endpoint: String, // email address, phone number, webhook URL, etc.
+      enabled: { type: Boolean, default: true }
+    }]
+  },
   
   // Audit Trail
   lastUpdatedBy: {
@@ -374,6 +436,7 @@ const assetSchema = new mongoose.Schema({
 // Indexes for performance
 assetSchema.index({ assetId: 1 });
 assetSchema.index({ ipAddress: 1 });
+assetSchema.index({ name: 1 });
 assetSchema.index({ type: 1 });
 assetSchema.index({ status: 1 });
 assetSchema.index({ criticality: 1 });
@@ -381,10 +444,21 @@ assetSchema.index({ owner: 1 });
 assetSchema.index({ location: 1 });
 assetSchema.index({ lastSeen: -1 });
 assetSchema.index({ tags: 1 });
+assetSchema.index({ hostname: 1 });
 
 // Compound indexes
 assetSchema.index({ type: 1, status: 1 });
 assetSchema.index({ criticality: 1, riskLevel: 1 });
+assetSchema.index({ location: 1, type: 1 });
+
+// Text index for search functionality
+assetSchema.index({
+  name: 'text',
+  hostname: 'text',
+  ipAddress: 'text',
+  'metadata.model': 'text',
+  'metadata.manufacturer': 'text'
+});
 
 // Virtual for total vulnerabilities count
 assetSchema.virtual('totalVulnerabilities').get(function() {
@@ -392,7 +466,7 @@ assetSchema.virtual('totalVulnerabilities').get(function() {
          this.vulnerabilities.medium + this.vulnerabilities.low;
 });
 
-// Virtual for asset age
+// Virtual for asset age in days
 assetSchema.virtual('age').get(function() {
   if (this.lifecycle.deploymentDate) {
     return Math.floor((Date.now() - this.lifecycle.deploymentDate) / (1000 * 60 * 60 * 24));
@@ -403,6 +477,43 @@ assetSchema.virtual('age').get(function() {
 // Virtual for days since last seen
 assetSchema.virtual('daysSinceLastSeen').get(function() {
   return Math.floor((Date.now() - this.lastSeen) / (1000 * 60 * 60 * 24));
+});
+
+// Virtual for overall health score
+assetSchema.virtual('healthScore').get(function() {
+  if (this.status === 'offline') return 0;
+  
+  let score = 100;
+  
+  // Deduct points for high resource usage
+  if (this.metadata.cpu > 80) score -= 10;
+  if (this.metadata.memory > 85) score -= 10;
+  if (this.metadata.storage > 90) score -= 15;
+  
+  // Deduct points for vulnerabilities
+  score -= (this.vulnerabilities.critical * 5);
+  score -= (this.vulnerabilities.high * 2);
+  
+  // Deduct points for outdated patches
+  score -= ((100 - this.patchLevel) * 0.2);
+  
+  return Math.max(0, Math.round(score));
+});
+
+// Virtual for network topology info (used in AssetsMonitored component)
+assetSchema.virtual('typeInfo').get(function() {
+  const typeMapping = {
+    'firewall': { icon: 'Shield', color: '#ef4444', category: 'Security' },
+    'switch': { icon: 'Router', color: '#3b82f6', category: 'Network' },
+    'router': { icon: 'Router', color: '#8b5cf6', category: 'Network' },
+    'workstation': { icon: 'Monitor', color: '#f59e0b', category: 'Endpoint' },
+    'server': { icon: 'Server', color: '#10b981', category: 'Infrastructure' },
+    'mobile_device': { icon: 'Smartphone', color: '#ec4899', category: 'Endpoint' },
+    'printer': { icon: 'Printer', color: '#6b7280', category: 'Peripheral' },
+    'access_point': { icon: 'Wifi', color: '#06b6d4', category: 'Network' }
+  };
+  
+  return typeMapping[this.type] || { icon: 'HardDrive', color: '#6b7280', category: 'Unknown' };
 });
 
 // Pre-save middleware to generate asset ID
@@ -425,9 +536,17 @@ assetSchema.pre('save', async function(next) {
     }
   }
   
-  // Update last seen
+  // Update last seen when asset is modified (except for new assets)
   if (this.isModified() && !this.isNew) {
     this.lastSeen = new Date();
+  }
+  
+  // Auto-calculate uptime if deployment date exists
+  if (this.lifecycle.deploymentDate && this.status === 'online') {
+    const daysSinceDeployment = Math.floor((Date.now() - this.lifecycle.deploymentDate) / (1000 * 60 * 60 * 24));
+    if (daysSinceDeployment > 0) {
+      this.uptime = daysSinceDeployment;
+    }
   }
   
   next();
@@ -439,10 +558,10 @@ assetSchema.methods.calculateRiskScore = function() {
   
   // Criticality weight (40%)
   const criticalityWeight = {
-    'Critical': 40,
-    'High': 30,
-    'Medium': 20,
-    'Low': 10
+    'critical': 40,
+    'high': 30,
+    'medium': 20,
+    'low': 10
   };
   score += criticalityWeight[this.criticality] || 20;
   
@@ -462,6 +581,38 @@ assetSchema.methods.calculateRiskScore = function() {
   return Math.round(Math.min(score, 100));
 };
 
+// Instance method to update performance metrics
+assetSchema.methods.updateMetrics = function(metrics) {
+  if (metrics.cpu !== undefined) this.metadata.cpu = metrics.cpu;
+  if (metrics.memory !== undefined) this.metadata.memory = metrics.memory;
+  if (metrics.storage !== undefined) this.metadata.storage = metrics.storage;
+  if (metrics.networkLoad !== undefined) this.metadata.networkLoad = metrics.networkLoad;
+  
+  this.lastSeen = new Date();
+  
+  return this.save();
+};
+
+// Instance method to add connection
+assetSchema.methods.addConnection = function(targetAssetId, relationship = 'connected_to') {
+  // Avoid duplicate connections
+  const existingConnection = this.dependencies.find(dep => dep.assetId === targetAssetId);
+  
+  if (!existingConnection) {
+    this.dependencies.push({
+      assetId: targetAssetId,
+      relationship: relationship
+    });
+  }
+  
+  // Also add to connections array for topology visualization
+  if (!this.connections.includes(targetAssetId)) {
+    this.connections.push(targetAssetId);
+  }
+  
+  return this.save();
+};
+
 // Static method to get asset statistics
 assetSchema.statics.getAssetStatistics = async function(filter = {}) {
   const pipeline = [
@@ -471,13 +622,16 @@ assetSchema.statics.getAssetStatistics = async function(filter = {}) {
         _id: null,
         total: { $sum: 1 },
         online: {
-          $sum: { $cond: [{ $eq: ['$status', 'Online'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$status', 'online'] }, 1, 0] }
         },
         offline: {
-          $sum: { $cond: [{ $eq: ['$status', 'Offline'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$status', 'offline'] }, 1, 0] }
+        },
+        warning: {
+          $sum: { $cond: [{ $eq: ['$status', 'warning'] }, 1, 0] }
         },
         critical: {
-          $sum: { $cond: [{ $eq: ['$criticality', 'Critical'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$criticality', 'critical'] }, 1, 0] }
         },
         avgSecurityScore: { $avg: '$securityScore' },
         avgComplianceScore: { $avg: '$complianceScore' },
@@ -490,7 +644,9 @@ assetSchema.statics.getAssetStatistics = async function(filter = {}) {
               '$vulnerabilities.low'
             ]
           }
-        }
+        },
+        avgCpuUsage: { $avg: '$metadata.cpu' },
+        avgMemoryUsage: { $avg: '$metadata.memory' }
       }
     }
   ];
@@ -500,11 +656,69 @@ assetSchema.statics.getAssetStatistics = async function(filter = {}) {
     total: 0,
     online: 0,
     offline: 0,
+    warning: 0,
     critical: 0,
     avgSecurityScore: 0,
     avgComplianceScore: 0,
-    totalVulnerabilities: 0
+    totalVulnerabilities: 0,
+    avgCpuUsage: 0,
+    avgMemoryUsage: 0
   };
+};
+
+// Static method to get assets by location
+assetSchema.statics.getAssetsByLocation = function() {
+  return this.aggregate([
+    {
+      $group: {
+        _id: '$location',
+        count: { $sum: 1 },
+        online: {
+          $sum: { $cond: [{ $eq: ['$status', 'online'] }, 1, 0] }
+        },
+        offline: {
+          $sum: { $cond: [{ $eq: ['$status', 'offline'] }, 1, 0] }
+        },
+        types: { $addToSet: '$type' }
+      }
+    },
+    { $sort: { count: -1 } }
+  ]);
+};
+
+// Static method to get network topology data
+assetSchema.statics.getNetworkTopology = function(filter = {}) {
+  return this.find(filter, {
+    assetId: 1,
+    name: 1,
+    type: 1,
+    ipAddress: 1,
+    status: 1,
+    criticality: 1,
+    location: 1,
+    position: 1,
+    connections: 1,
+    metadata: 1,
+    lastSeen: 1,
+    uptime: 1
+  }).lean();
+};
+
+// Static method to search assets
+assetSchema.statics.searchAssets = function(searchTerm, filters = {}) {
+  const query = { ...filters };
+  
+  if (searchTerm) {
+    query.$or = [
+      { name: { $regex: searchTerm, $options: 'i' } },
+      { hostname: { $regex: searchTerm, $options: 'i' } },
+      { ipAddress: { $regex: searchTerm, $options: 'i' } },
+      { type: { $regex: searchTerm, $options: 'i' } },
+      { location: { $regex: searchTerm, $options: 'i' } }
+    ];
+  }
+  
+  return this.find(query).sort({ lastSeen: -1 });
 };
 
 module.exports = mongoose.model('Asset', assetSchema);

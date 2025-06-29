@@ -5,7 +5,7 @@ const assetSchema = new mongoose.Schema({
   // Basic Information
   assetId: {
     type: String,
-    required: true,
+    required: false,// from true to false
     unique: true,
     // match: /^AST-\d{4}$/ 
   },
@@ -517,11 +517,12 @@ assetSchema.virtual('typeInfo').get(function() {
 });
 
 // Pre-save middleware to generate asset ID
+// No more using middlware | automatically generating assetId in seedDatabase.js 
 assetSchema.pre('save', async function(next) {
   if (!this.assetId) {
     try {
       const lastAsset = await this.constructor.findOne({}, {}, { sort: { 'assetId': -1 } });
-      
+      console.log('🕔 Last Asset:', lastAsset);
       let nextNumber = 1;
       if (lastAsset && lastAsset.assetId) {
         const match = lastAsset.assetId.match(/AST-(\d{4})/);

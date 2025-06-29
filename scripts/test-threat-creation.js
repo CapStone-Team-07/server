@@ -12,8 +12,8 @@ const Threat = require('../models/Threat');
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    //   useNewUrlParser: true,
+    //   useUnifiedTopology: true,
     });
     console.log('MongoDB Connected for testing...');
   } catch (error) {
@@ -41,7 +41,7 @@ const testThreatCreation = async () => {
       source: "Endpoint Detection",
       riskScore: 85,
       confidence: 90,
-      analyst: new mongoose.Types.ObjectId("686162d9b246d690b7f8004d"), // Use the user ID from JWT
+      analyst: new mongoose.Types.ObjectId("686167082e881148d56db45c"), // Use the user ID from JWT
       analystName: "Test User"
     });
     

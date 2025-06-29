@@ -35,41 +35,41 @@ const users = [
     isEmailVerified: true
   },
   {
-    username: 'johndoe',
-    email: 'john.doe@cybersec.com',
+    username: 'Hasah',
+    email: 'hasan_hamidli@cybersec.com',
     password: 'password123',
-    firstName: 'John',
-    lastName: 'Doe',
+    firstName: 'Hasan',
+    lastName: 'Hamidli',
     role: 'soc_manager',
     isActive: true,
     isEmailVerified: true
   },
   {
-    username: 'janesmith',
-    email: 'jane.smith@cybersec.com',
+    username: 'Gulyaz',
+    email: 'gulyaz_ismayilzada@cybersec.com',
     password: 'password123',
-    firstName: 'Jane',
-    lastName: 'Smith',
+    firstName: 'Gulyaz',
+    lastName: 'Ismayilzada',
     role: 'senior_analyst',
     isActive: true,
     isEmailVerified: true
   },
   {
-    username: 'mikejohnson',
-    email: 'mike.johnson@cybersec.com',
+    username: 'Elvin',
+    email: 'elvin_seidli@cybersec.com',
     password: 'password123',
-    firstName: 'Mike',
-    lastName: 'Johnson',
+    firstName: 'Elvin',
+    lastName: 'Seidli',
     role: 'soc_analyst',
     isActive: true,
     isEmailVerified: true
   },
   {
-    username: 'sarahwilson',
-    email: 'sarah.wilson@cybersec.com',
+    username: 'Arif',
+    email: 'arif_mammadov@cybersec.com',
     password: 'password123',
-    firstName: 'Sarah',
-    lastName: 'Wilson',
+    firstName: 'Arif',
+    lastName: 'Mammadov',
     role: 'soc_analyst',
     isActive: true,
     isEmailVerified: true
@@ -95,6 +95,7 @@ const generateSampleThreats = (analysts) => {
     const baseTime = Date.now() - (Math.random() * 7 * 24 * 60 * 60 * 1000);
     
     threats.push({
+      threatId: `THREAT-${String(i + 1).padStart(4, '0')}`,
       title: `${category} Attack - ${country}`,
       description: `Suspicious ${category.toLowerCase()} activity detected from ${country}`,
       severity,
@@ -137,6 +138,7 @@ const generateSampleAssets = () => {
     const type = types[Math.floor(Math.random() * types.length)];
     
     assets.push({
+      assetId: `ASST-${String(i + 1).padStart(3, '0')}`, // validation error | commented regex match
       name: `${type.replace(' ', '-')}-${String(i + 1).padStart(3, '0')}`,
       type,
       ipAddress: `192.168.${Math.floor(Math.random() * 10) + 1}.${Math.floor(Math.random() * 254) + 1}`,
@@ -178,7 +180,7 @@ const seedDatabase = async () => {
     const createdUsers = await User.create(users);
     console.log(`✅ Created ${createdUsers.length} users`);
     
-    // Create threats
+    // // Create threats
     console.log('🛡️  Creating threats...');
     const threats = generateSampleThreats(createdUsers);
     const createdThreats = await Threat.create(threats);

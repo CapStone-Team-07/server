@@ -674,19 +674,20 @@ router.get('/type/:type', protect, requirePermission('assets:read'), getAssetsBy
 // Bulk operations
 router.put('/bulk', protect, requirePermission('assets:write'), auditLog('ASSETS_BULK_UPDATE'), bulkUpdateAssets);
 
-// Main CRUD routes
+// Main CRUD routes |  Allow querying without protect middleware function | dont require permission for get
+//   .get(protect, requirePermission('assets:read'), getAssets)
 router.route('/')
-  .get(protect, requirePermission('assets:read'), getAssets)
+  .get(getAssets)
   .post(protect, requirePermission('assets:write'), createAssetValidation, auditLog('ASSET_CREATE'), createAsset);
 
 // Individual asset routes
 router.route('/:id')
-  .get(protect, requirePermission('assets:read'), getAsset)
+  .get(getAsset)
   .put(protect, requirePermission('assets:write'), updateAssetValidation, auditLog('ASSET_UPDATE'), updateAsset)
   .delete(protect, authorize('admin', 'soc_manager'), auditLog('ASSET_DELETE'), deleteAsset);
 
 // Asset health and monitoring
-router.get('/:id/health', protect, requirePermission('assets:read'), getAssetHealth);
+router.get('/:id/health', getAssetHealth);
 
 // Asset security and maintenance operations
 router.post('/:id/scan', 

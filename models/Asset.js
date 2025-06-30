@@ -238,7 +238,7 @@ const assetSchema = new mongoose.Schema({
     vendor: String,
     licenseType: {
       type: String,
-      enum: ['Commercial', 'Open Source', 'Freeware', 'Trial']
+      enum: ['Commercial', 'Open Source', 'Freeware', 'Trial', 'Built-in']
     },
     installDate: Date,
     lastUpdate: Date
@@ -261,7 +261,7 @@ const assetSchema = new mongoose.Schema({
     },
     status: {
       type: String,
-      enum: ['running', 'stopped', 'failed'],
+      enum: ['running', 'stopped', 'failed', 'disabled'],
       default: 'running'
     },
     version: String

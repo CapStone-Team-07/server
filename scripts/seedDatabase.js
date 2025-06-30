@@ -12,8 +12,8 @@ dotenv.config();
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      // useNewUrlParser: true,
+      // useUnifiedTopology: true,
     });
     console.log('MongoDB Connected for seeding...');
   } catch (error) {
@@ -146,170 +146,74 @@ const generateSampleThreats = (analysts) => {
   return threats;
 };
 
-// Generate sample assets with new schema
+// Generate sample assets with custom network topology
 const generateSampleAssets = (users) => {
-  const types = ['firewall', 'switch', 'router', 'workstation', 'server', 'mobile_device', 'printer', 'access_point', 'iot_device'];
-  const statuses = ['online', 'offline', 'warning', 'maintenance'];
-  const locations = ['Data Center A', 'Data Center B', 'Office Floor 1', 'Office Floor 2', 'Remote Office', 'Cloud - AWS', 'Cloud - Azure'];
-  const departments = ['IT', 'Finance', 'HR', 'Engineering', 'Sales', 'Marketing', 'Operations'];
-  const owners = ['IT Department', 'Network Team', 'Security Team', 'DevOps Team'];
-  const operatingSystems = ['Windows Server 2022', 'Ubuntu 22.04', 'CentOS 8', 'Windows 11', 'macOS Ventura', 'Cisco IOS', 'pfSense'];
-  const manufacturers = ['Cisco', 'HP', 'Dell', 'Juniper', 'Fortinet', 'Palo Alto', 'VMware', 'Microsoft'];
-  const criticalities = ['critical', 'high', 'medium', 'low'];
-  const dataClassifications = ['public', 'internal', 'confidential', 'restricted'];
-
   const assets = [];
-  const createdAssets = []; // To track created assets for connections
+  const assetRegistry = {}; // Track created assets for connections
+  let assetCounter = 1;
 
-  for (let i = 0; i < 40; i++) {
-    const type = types[Math.floor(Math.random() * types.length)];
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    const criticality = criticalities[Math.floor(Math.random() * criticalities.length)];
-    const location = locations[Math.floor(Math.random() * locations.length)];
-    const department = departments[Math.floor(Math.random() * departments.length)];
-    const manufacturer = manufacturers[Math.floor(Math.random() * manufacturers.length)];
-    const os = operatingSystems[Math.floor(Math.random() * operatingSystems.length)];
-    
-    // Generate realistic IP addresses based on location
-    let ipPrefix = '192.168.1';
-    if (location.includes('Data Center A')) ipPrefix = '10.1.0';
-    else if (location.includes('Data Center B')) ipPrefix = '10.2.0';
-    else if (location.includes('Cloud')) ipPrefix = '172.16.0';
-    
-    const deploymentDate = new Date(Date.now() - Math.random() * 365 * 2 * 24 * 60 * 60 * 1000); // Up to 2 years ago
-    const lastSeenOffset = Math.random() * 7 * 24 * 60 * 60 * 1000; // Up to 7 days ago
+  // Helper function to create base asset
+  const createBaseAsset = (overrides = {}) => {
+    const deploymentDate = new Date(Date.now() - Math.random() * 365 * 2 * 24 * 60 * 60 * 1000);
+    const lastSeenOffset = Math.random() * 7 * 24 * 60 * 60 * 1000;
     const lastSeen = new Date(Date.now() - lastSeenOffset);
     
-    const asset = {
-      // Pre-generate asset ID to avoid conflicts in bulk insert
-      assetId: `AST-${String(i + 1).padStart(4, '0')}`,
-      name: `${type.toUpperCase()}-${String(i + 1).padStart(3, '0')}`,
-      type,
-      ipAddress: `${ipPrefix}.${Math.floor(Math.random() * 254) + 1}`,
+    return {
+      assetId: `AST-${String(assetCounter++).padStart(4, '0')}`,
+      hostname: `${overrides.name?.toLowerCase() || 'asset'}.acc.local`,
       macAddress: Array.from({ length: 6 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':'),
-      hostname: `${type}${String(i + 1).padStart(3, '0')}.cybersec.local`,
-      
-      // Position for network topology (spread assets in a grid)
-      position: {
-        x: (i % 8) * 150 + Math.random() * 50,
-        y: Math.floor(i / 8) * 120 + Math.random() * 40
-      },
-      
-      operatingSystem: os,
-      osVersion: `${os.split(' ')[0]} ${Math.floor(Math.random() * 10) + 1}.${Math.floor(Math.random() * 10)}`,
-      
-      location,
-      department,
-      owner: owners[Math.floor(Math.random() * owners.length)],
-      ownerContact: `${department.toLowerCase()}@cybersec.com`,
-      
-      status,
+      location: 'IT-Room',
+      department: 'IT',
+      owner: 'IT Department',
+      ownerContact: 'it@cybersec.com',
+      status: 'online',
       lastSeen,
-      uptime: status === 'online' ? Math.floor(Math.random() * 365) : 0,
-      
-      criticality,
+      uptime: Math.floor(Math.random() * 180) + 1,
+      criticality: 'medium',
       securityScore: Math.floor(Math.random() * 40) + 60,
       complianceScore: Math.floor(Math.random() * 30) + 70,
-      riskLevel: criticality === 'critical' ? 'high' : criticality === 'high' ? 'medium' : 'low',
-      
-      // Performance metrics
-      metadata: {
-        cpu: status === 'online' ? Math.floor(Math.random() * 80) + 10 : 0,
-        memory: status === 'online' ? Math.floor(Math.random() * 70) + 20 : 0,
-        storage: Math.floor(Math.random() * 60) + 30,
-        networkLoad: status === 'online' ? Math.floor(Math.random() * 50) + 10 : 0,
-        throughput: type.includes('server') ? `${Math.floor(Math.random() * 900) + 100} Mbps` : `${Math.floor(Math.random() * 90) + 10} Mbps`,
-        bandwidth: type === 'server' ? '1 Gbps' : type === 'switch' ? '10 Gbps' : '100 Mbps',
-        connectedDevices: type === 'switch' ? Math.floor(Math.random() * 24) + 4 : type === 'access_point' ? Math.floor(Math.random() * 50) + 5 : 0,
-        activeports: type === 'switch' ? Math.floor(Math.random() * 48) + 8 : 0,
-        manufacturer,
-        model: `${manufacturer}-${type.toUpperCase()}-${Math.floor(Math.random() * 9000) + 1000}`,
-        serialNumber: `SN${Math.random().toString(36).substring(2, 12).toUpperCase()}`,
-        firmware: `${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 100)}`,
-        version: `v${Math.floor(Math.random() * 3) + 1}.${Math.floor(Math.random() * 10)}`,
-        rules: type === 'firewall' ? Math.floor(Math.random() * 500) + 50 : 0,
-        ports: type === 'switch' ? Math.floor(Math.random() * 24) + 24 : 0,
-        user: type === 'workstation' ? `user${Math.floor(Math.random() * 100) + 1}` : null,
-        domain: type === 'workstation' ? 'CYBERSEC' : null,
-        lastLogin: type === 'workstation' ? new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString() : null,
-        warrantyExpiry: new Date(Date.now() + Math.random() * 365 * 3 * 24 * 60 * 60 * 1000), // Up to 3 years
-        lastMaintenanceDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000), // Last 90 days
-        nextMaintenanceDate: new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000) // Next 90 days
-      },
-      
+      riskLevel: 'medium',
+      tags: ['production', 'monitored', 'acc.local'],
+      businessFunction: 'IT Operations',
+      dataClassification: 'internal',
+      discoveryMethod: 'network_scan',
+      discoveredBy: users[users.length - 1]._id,
+      lastUpdatedBy: users[users.length - 1]._id,
       vulnerabilities: {
-        total: (() => {
-          const critical = Math.floor(Math.random() * 3);
-          const high = Math.floor(Math.random() * 5);
-          const medium = Math.floor(Math.random() * 8);
-          const low = Math.floor(Math.random() * 10);
-          return critical + high + medium + low;
-        })(),
-        critical: Math.floor(Math.random() * 3),
-        high: Math.floor(Math.random() * 5),
-        medium: Math.floor(Math.random() * 8),
-        low: Math.floor(Math.random() * 10)
+        total: Math.floor(Math.random() * 10),
+        critical: Math.floor(Math.random() * 2),
+        high: Math.floor(Math.random() * 3),
+        medium: Math.floor(Math.random() * 4),
+        low: Math.floor(Math.random() * 5)
       },
       lastVulnScan: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
       nextVulnScan: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000),
-      
       patchLevel: Math.floor(Math.random() * 30) + 70,
       lastPatchDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
       pendingPatches: Math.floor(Math.random() * 10),
-      
-      // Sample software
-      software: type === 'workstation' || type === 'server' ? [
-        {
-          name: 'Microsoft Office',
-          version: '2021',
-          vendor: 'Microsoft',
-          licenseType: 'Commercial',
-          installDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
-          lastUpdate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
-        },
-        {
-          name: 'Antivirus Solution',
-          version: '12.5.1',
-          vendor: 'Security Vendor',
-          licenseType: 'Commercial',
-          installDate: deploymentDate,
-          lastUpdate: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000)
-        }
-      ] : [],
-      
-      // Sample services based on asset type
-      services: (() => {
-        const commonServices = [];
-        if (type === 'server') {
-          commonServices.push(
-            { name: 'HTTP', port: 80, protocol: 'TCP', status: 'running' },
-            { name: 'HTTPS', port: 443, protocol: 'TCP', status: 'running' },
-            { name: 'SSH', port: 22, protocol: 'TCP', status: 'running' }
-          );
-        } else if (type === 'workstation') {
-          commonServices.push(
-            { name: 'RDP', port: 3389, protocol: 'TCP', status: 'running' }
-          );
-        } else if (type === 'firewall') {
-          commonServices.push(
-            { name: 'SNMP', port: 161, protocol: 'UDP', status: 'running' },
-            { name: 'Management', port: 8443, protocol: 'TCP', status: 'running' }
-          );
-        }
-        return commonServices;
-      })(),
-      
-      // Security controls - only include fields that work with the schema
+      lifecycle: {
+        acquisitionDate: new Date(deploymentDate.getTime() - 30 * 24 * 60 * 60 * 1000),
+        deploymentDate,
+        lastMaintenanceDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000),
+        nextMaintenanceDate: new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000),
+        endOfLifeDate: new Date(Date.now() + Math.random() * 365 * 5 * 24 * 60 * 60 * 1000),
+      },
+      financial: {
+        acquisitionCost: Math.floor(Math.random() * 10000) + 1000,
+        currentValue: Math.floor(Math.random() * 8000) + 500,
+        maintenanceCost: Math.floor(Math.random() * 1000) + 100,
+        currency: 'USD'
+      },
       securityControls: {
         antivirus: {
-          installed: type === 'workstation' || type === 'server',
+          installed: false,
           product: 'CyberSec Antivirus Pro',
           version: '12.5.1',
           lastUpdate: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-          status: Math.random() > 0.1 ? 'active' : 'outdated'
+          status: 'active'
         },
         backups: {
-          enabled: type === 'server' || Math.random() > 0.5,
+          enabled: false,
           frequency: 'Daily',
           lastBackup: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000),
           retention: '30 days'
@@ -320,8 +224,6 @@ const generateSampleAssets = (users) => {
           version: '2.1.5'
         }
       },
-      
-      // Compliance
       compliance: {
         frameworks: [
           {
@@ -339,32 +241,6 @@ const generateSampleAssets = (users) => {
           }
         ]
       },
-      
-      // Lifecycle
-      lifecycle: {
-        acquisitionDate: new Date(deploymentDate.getTime() - 30 * 24 * 60 * 60 * 1000), // 30 days before deployment
-        deploymentDate,
-        lastMaintenanceDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000),
-        nextMaintenanceDate: new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000),
-        endOfLifeDate: new Date(Date.now() + Math.random() * 365 * 5 * 24 * 60 * 60 * 1000), // 5 years from now
-      },
-      
-      // Financial
-      financial: {
-        acquisitionCost: Math.floor(Math.random() * 10000) + 1000,
-        currentValue: Math.floor(Math.random() * 8000) + 500,
-        maintenanceCost: Math.floor(Math.random() * 1000) + 100,
-        currency: 'USD'
-      },
-      
-      tags: ['production', 'monitored', department.toLowerCase()],
-      businessFunction: `${department} Operations`,
-      dataClassification: dataClassifications[Math.floor(Math.random() * dataClassifications.length)],
-      
-      discoveryMethod: 'network_scan',
-      discoveredBy: users[(users.length)-1]._id,
-      
-      // Monitoring configuration
       monitoring: {
         enabled: true,
         intervals: {
@@ -379,95 +255,302 @@ const generateSampleAssets = (users) => {
           network: 75
         }
       },
-      
-      // Alerts
       alerts: {
         enabled: true,
         notifications: [
           {
             type: 'email',
-            endpoint: `${department.toLowerCase()}@cybersec.com`,
+            endpoint: 'it@cybersec.com',
             enabled: true
           }
         ]
       },
-      
-      lastUpdatedBy: users[(users.length)-1]._id,
-      notes: `${type.charAt(0).toUpperCase() + type.slice(1)} asset deployed in ${location}. Managed by ${department} department.`
+      ...overrides
     };
-    
-    assets.push(asset);
-    createdAssets.push({
-      name: asset.name,
-      type: asset.type,
-      id: i // temporary ID for connections
-    });
-  }
-  
-  // Add some realistic network connections after creating all assets
-  assets.forEach((asset, index) => {
-    const connections = [];
-    const dependencies = [];
-    
-    // Servers connect to switches
-    if (asset.type === 'server') {
-      const switches = createdAssets.filter(a => a.type === 'switch');
-      if (switches.length > 0) {
-        const randomSwitch = switches[Math.floor(Math.random() * switches.length)];
-        connections.push(randomSwitch.name);
-        dependencies.push({
-          assetId: randomSwitch.name,
-          relationship: 'connected_to',
-          description: 'Network connection'
-        });
-      }
-    }
-    
-    // Workstations connect to switches
-    if (asset.type === 'workstation') {
-      const switches = createdAssets.filter(a => a.type === 'switch');
-      if (switches.length > 0) {
-        const randomSwitch = switches[Math.floor(Math.random() * switches.length)];
-        connections.push(randomSwitch.name);
-        dependencies.push({
-          assetId: randomSwitch.name,
-          relationship: 'connected_to',
-          description: 'Network access'
-        });
-      }
-    }
-    
-    // Switches connect to routers
-    if (asset.type === 'switch') {
-      const routers = createdAssets.filter(a => a.type === 'router');
-      if (routers.length > 0) {
-        const randomRouter = routers[Math.floor(Math.random() * routers.length)];
-        connections.push(randomRouter.name);
-        dependencies.push({
-          assetId: randomRouter.name,
-          relationship: 'connected_to',
-          description: 'Network routing'
-        });
-      }
-    }
-    
-    // Everything behind firewall
-    if (asset.type !== 'firewall') {
-      const firewalls = createdAssets.filter(a => a.type === 'firewall');
-      if (firewalls.length > 0) {
-        const randomFirewall = firewalls[Math.floor(Math.random() * firewalls.length)];
-        dependencies.push({
-          assetId: randomFirewall.name,
-          relationship: 'depends_on',
-          description: 'Security protection'
-        });
-      }
-    }
-    
-    asset.connections = connections;
-    asset.dependencies = dependencies;
+  };
+
+  // 1. Main Firewall (gateway to internet) - positioned at top center
+  const firewallAsset = createBaseAsset({
+    name: 'Main-Firewall',
+    type: 'firewall',
+    ipAddress: '192.168.1.1',
+    position: { x: 400, y: 120 },
+    criticality: 'critical',
+    riskLevel: 'high',
+    connections: [], // Will be populated after switch creation
+    operatingSystem: 'Cisco ASA OS',
+    osVersion: '9.12(4)',
+    metadata: {
+      cpu: 25,
+      memory: 45,
+      networkLoad: 30,
+      throughput: '150 Mbps',
+      rules: 245,
+      manufacturer: 'Cisco',
+      model: 'ASA 5515-X',
+      firmware: '9.12(4)',
+      serialNumber: `SN${Math.random().toString(36).substring(2, 12).toUpperCase()}`,
+      version: 'v9.12',
+      bandwidth: '1 Gbps'
+    },
+    services: [
+      { name: 'SNMP', port: 161, protocol: 'UDP', status: 'running' },
+      { name: 'Management', port: 8443, protocol: 'TCP', status: 'running' },
+      { name: 'SSH', port: 22, protocol: 'TCP', status: 'running' }
+    ],
+    dependencies: [], // Will be populated later
+    notes: 'Main firewall providing network security and internet gateway access'
   });
-  
+  assets.push(firewallAsset);
+  assetRegistry['Main-Firewall'] = firewallAsset;
+
+  // 2. Core Switch (connects all PCs) - positioned below firewall
+  const switchAsset = createBaseAsset({
+    name: 'Core-Switch',
+    type: 'switch',
+    ipAddress: '192.168.1.2',
+    position: { x: 400, y: 250 },
+    criticality: 'high',
+    riskLevel: 'medium',
+    connections: [], // Will be populated after all assets are created
+    operatingSystem: 'Cisco IOS',
+    osVersion: '15.2(7)E',
+    metadata: {
+      cpu: 15,
+      memory: 32,
+      networkLoad: 45,
+      connectedDevices: 7,
+      bandwidth: '1 Gbps',
+      manufacturer: 'Cisco',
+      model: 'Catalyst 2960-X',
+      ports: 48,
+      activeports: 7,
+      serialNumber: `SN${Math.random().toString(36).substring(2, 12).toUpperCase()}`,
+      firmware: '15.2(7)E',
+      version: 'v15.2'
+    },
+    services: [
+      { name: 'SNMP', port: 161, protocol: 'UDP', status: 'running' },
+      { name: 'SSH', port: 22, protocol: 'TCP', status: 'running' },
+      { name: 'Telnet', port: 23, protocol: 'TCP', status: 'disabled' }
+    ],
+    dependencies: [], // Will be populated later
+    notes: 'Core network switch connecting all workstations'
+  });
+  assets.push(switchAsset);
+  assetRegistry['Core-Switch'] = switchAsset;
+
+  // 3. Specific workstations with exact names and IPs from your configuration
+  const pcConfigs = [
+    { name: 'AKMPC007', x: 150, y: 380, ip: '192.168.80.244' },
+    { name: 'AKMPC105', x: 280, y: 450, ip: '192.168.80.36' },
+    { name: 'AKMPC085', x: 400, y: 480, ip: '192.168.80.121' },
+    { name: 'AKMPC047', x: 520, y: 450, ip: '192.168.80.40' },
+    { name: 'CL101', x: 650, y: 380, ip: '192.168.80.220' },
+    { name: 'AKMPC049', x: 580, y: 300, ip: '192.168.80.248' },
+    { name: 'AKMPC048', x: 220, y: 300, ip: '192.168.80.222' }
+  ];
+
+  pcConfigs.forEach((pc, index) => {
+    const osChoices = ['Windows 11', 'Windows 10', 'Windows Server 2019'];
+    const selectedOS = osChoices[index % 3];
+    
+    const workstationAsset = createBaseAsset({
+      name: pc.name,
+      type: 'workstation',
+      ipAddress: pc.ip,
+      position: { x: pc.x, y: pc.y },
+      criticality: 'low',
+      riskLevel: 'low',
+      location: 'Office-Floor1',
+      connections: [], // Will be populated after all assets are created
+      operatingSystem: selectedOS,
+      osVersion: selectedOS === 'Windows 11' ? '22H2' : selectedOS === 'Windows 10' ? '22H2' : '2019',
+      metadata: {
+        cpu: Math.floor(Math.random() * 80) + 10,
+        memory: Math.floor(Math.random() * 70) + 20,
+        storage: Math.floor(Math.random() * 60) + 30,
+        networkLoad: Math.floor(Math.random() * 30) + 5,
+        user: 'User',
+        manufacturer: index % 2 === 0 ? 'Dell' : 'HP',
+        model: index % 2 === 0 ? `OptiPlex-${7000 + index}` : `EliteDesk-${800 + index}`,
+        serialNumber: `SN${Math.random().toString(36).substring(2, 12).toUpperCase()}`,
+        domain: 'ACC.LOCAL',
+        lastLogin: new Date(Date.now() - Math.random() * 86400000).toLocaleString(),
+        throughput: `${Math.floor(Math.random() * 90) + 10} Mbps`,
+        bandwidth: '100 Mbps'
+      },
+      services: [
+        { name: 'RDP', port: 3389, protocol: 'TCP', status: 'running' },
+        { name: 'SMB', port: 445, protocol: 'TCP', status: 'running' }
+      ],
+      software: [
+        {
+          name: 'Microsoft Office',
+          version: '2021',
+          vendor: 'Microsoft',
+          licenseType: 'Commercial',
+          installDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
+          lastUpdate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
+        },
+        {
+          name: 'Windows Defender',
+          version: '4.18.2209.7',
+          vendor: 'Microsoft',
+          licenseType: 'Built-in',
+          installDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
+          lastUpdate: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000)
+        }
+      ],
+      securityControls: {
+        antivirus: {
+          installed: true,
+          product: 'Windows Defender',
+          version: '4.18.2209.7',
+          lastUpdate: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+          status: 'active'
+        },
+        backups: {
+          enabled: true,
+          frequency: 'Weekly',
+          lastBackup: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+          retention: '30 days'
+        },
+        monitoring: {
+          enabled: true,
+          agent: 'CyberSec Agent',
+          version: '2.1.5'
+        }
+      },
+      dependencies: [], // Will be populated later
+      notes: `Workstation ${pc.name} deployed in Office-Floor1. Domain: ACC.LOCAL`
+    });
+    
+    assets.push(workstationAsset);
+    assetRegistry[pc.name] = workstationAsset;
+  });
+
+  // Add some additional infrastructure assets to make the network more realistic
+  const additionalAssets = [
+    // File Server
+    {
+      name: 'FILE-SERVER-001',
+      type: 'server',
+      ipAddress: '192.168.1.100',
+      position: { x: 200, y: 120 },
+      criticality: 'high',
+      location: 'IT-Room',
+      operatingSystem: 'Windows Server 2019',
+      metadata: {
+        cpu: 45,
+        memory: 65,
+        storage: 85,
+        user: 'File Server',
+        manufacturer: 'Dell',
+        model: 'PowerEdge-R740'
+      },
+      connections: []
+    },
+    // Domain Controller
+    {
+      name: 'DC-001',
+      type: 'server',
+      ipAddress: '192.168.1.101',
+      position: { x: 600, y: 120 },
+      criticality: 'critical',
+      location: 'IT-Room',
+      operatingSystem: 'Windows Server 2019',
+      metadata: {
+        cpu: 35,
+        memory: 55,
+        storage: 40,
+        user: 'Domain Controller',
+        manufacturer: 'HP',
+        model: 'ProLiant-DL380'
+      },
+      connections: []
+    },
+    // Printer
+    {
+      name: 'PRINTER-001',
+      type: 'printer',
+      ipAddress: '192.168.80.100',
+      position: { x: 400, y: 380 },
+      criticality: 'low',
+      location: 'Office-Floor1',
+      operatingSystem: 'Embedded Linux',
+      metadata: {
+        manufacturer: 'HP',
+        model: 'LaserJet-Pro-4001n',
+        connectedDevices: 7
+      },
+      connections: []
+    }
+  ];
+
+  additionalAssets.forEach(asset => {
+    const additionalAsset = createBaseAsset(asset);
+    assets.push(additionalAsset);
+    assetRegistry[asset.name] = additionalAsset;
+  });
+
+  // Now establish all connections using asset IDs (not names)
+  // Firewall connects to switch
+  firewallAsset.connections = [switchAsset.assetId];
+  firewallAsset.dependencies = [];
+
+  // Switch connects to all workstations and servers
+  switchAsset.connections = [
+    firewallAsset.assetId,
+    ...pcConfigs.map(pc => assetRegistry[pc.name].assetId),
+    assetRegistry['FILE-SERVER-001'].assetId,
+    assetRegistry['DC-001'].assetId,
+    assetRegistry['PRINTER-001'].assetId
+  ];
+  switchAsset.dependencies = [
+    {
+      assetId: firewallAsset.assetId,
+      relationship: 'connected_to',
+      description: 'Network connection through firewall'
+    }
+  ];
+
+  // All workstations connect to switch and depend on firewall
+  pcConfigs.forEach(pc => {
+    const workstation = assetRegistry[pc.name];
+    workstation.connections = [switchAsset.assetId];
+    workstation.dependencies = [
+      {
+        assetId: switchAsset.assetId,
+        relationship: 'connected_to',
+        description: 'Network access'
+      },
+      {
+        assetId: firewallAsset.assetId,
+        relationship: 'depends_on',
+        description: 'Security protection'
+      }
+    ];
+  });
+
+  // Servers connect to switch and depend on firewall
+  ['FILE-SERVER-001', 'DC-001', 'PRINTER-001'].forEach(serverName => {
+    const server = assetRegistry[serverName];
+    server.connections = [switchAsset.assetId];
+    server.dependencies = [
+      {
+        assetId: switchAsset.assetId,
+        relationship: 'connected_to',
+        description: 'Network access'
+      },
+      {
+        assetId: firewallAsset.assetId,
+        relationship: 'depends_on',
+        description: 'Security protection'
+      }
+    ];
+  });
+
   return assets;
 };
 
@@ -514,6 +597,11 @@ const seedDatabase = async () => {
     console.log('\n💻 Assets by Type:');
     Object.entries(assetsByType).forEach(([type, count]) => {
       console.log(`  ${type}: ${count}`);
+    });
+    
+    console.log('\n🖥️  Workstation Assets:');
+    createdAssets.filter(asset => asset.type === 'workstation').forEach(asset => {
+      console.log(`  ${asset.name}: ${asset.ipAddress} (${asset.operatingSystem})`);
     });
     
     console.log('\n🔐 Default Login Credentials:');
@@ -609,255 +697,24 @@ const createNetworkTopology = async () => {
     // Clear existing assets
     await Asset.deleteMany({});
     
-    // Create a realistic network topology
-    const networkAssets = [
-      // Core Infrastructure
-      {
-        name: 'FIREWALL-001',
-        type: 'firewall',
-        ipAddress: '192.168.1.1',
-        location: 'Data Center A',
-        criticality: 'critical',
-        position: { x: 400, y: 50 },
-        metadata: {
-          manufacturer: 'Fortinet',
-          model: 'FortiGate-600E',
-          rules: 250,
-          cpu: 35,
-          memory: 45
-        }
-      },
-      {
-        name: 'ROUTER-001',
-        type: 'router',
-        ipAddress: '192.168.1.2',
-        location: 'Data Center A',
-        criticality: 'critical',
-        position: { x: 400, y: 150 },
-        connections: ['FIREWALL-001'],
-        metadata: {
-          manufacturer: 'Cisco',
-          model: 'ISR-4431',
-          cpu: 25,
-          memory: 30
-        }
-      },
-      // Switches
-      {
-        name: 'SWITCH-001',
-        type: 'switch',
-        ipAddress: '192.168.1.10',
-        location: 'Data Center A',
-        criticality: 'high',
-        position: { x: 200, y: 250 },
-        connections: ['ROUTER-001'],
-        metadata: {
-          manufacturer: 'Cisco',
-          model: 'Catalyst-9300',
-          ports: 48,
-          connectedDevices: 15,
-          cpu: 20,
-          memory: 25
-        }
-      },
-      {
-        name: 'SWITCH-002',
-        type: 'switch',
-        ipAddress: '192.168.1.11',
-        location: 'Data Center A',
-        criticality: 'high',
-        position: { x: 600, y: 250 },
-        connections: ['ROUTER-001'],
-        metadata: {
-          manufacturer: 'HP',
-          model: 'Aruba-CX-6300',
-          ports: 24,
-          connectedDevices: 8,
-          cpu: 15,
-          memory: 20
-        }
-      },
-      // Servers
-      {
-        name: 'SERVER-001',
-        type: 'server',
-        ipAddress: '192.168.1.100',
-        location: 'Data Center A',
-        criticality: 'critical',
-        position: { x: 100, y: 350 },
-        connections: ['SWITCH-001'],
-        operatingSystem: 'Windows Server 2022',
-        metadata: {
-          manufacturer: 'Dell',
-          model: 'PowerEdge-R750',
-          cpu: 65,
-          memory: 78,
-          storage: 45,
-          user: 'Database Server'
-        }
-      },
-      {
-        name: 'SERVER-002',
-        type: 'server',
-        ipAddress: '192.168.1.101',
-        location: 'Data Center A',
-        criticality: 'high',
-        position: { x: 300, y: 350 },
-        connections: ['SWITCH-001'],
-        operatingSystem: 'Ubuntu 22.04',
-        metadata: {
-          manufacturer: 'HP',
-          model: 'ProLiant-DL380',
-          cpu: 45,
-          memory: 55,
-          storage: 60,
-          user: 'Web Server'
-        }
-      },
-      // Workstations
-      {
-        name: 'WORKSTATION-001',
-        type: 'workstation',
-        ipAddress: '192.168.1.200',
-        location: 'Office Floor 1',
-        criticality: 'medium',
-        position: { x: 500, y: 350 },
-        connections: ['SWITCH-002'],
-        operatingSystem: 'Windows 11',
-        metadata: {
-          manufacturer: 'Dell',
-          model: 'OptiPlex-7090',
-          cpu: 35,
-          memory: 40,
-          storage: 25,
-          user: 'john.doe'
-        }
-      },
-      {
-        name: 'WORKSTATION-002',
-        type: 'workstation',
-        ipAddress: '192.168.1.201',
-        location: 'Office Floor 1',
-        criticality: 'medium',
-        position: { x: 700, y: 350 },
-        connections: ['SWITCH-002'],
-        operatingSystem: 'Windows 11',
-        metadata: {
-          manufacturer: 'HP',
-          model: 'EliteDesk-800',
-          cpu: 28,
-          memory: 35,
-          storage: 30,
-          user: 'jane.smith'
-        }
-      },
-      // Network devices
-      {
-        name: 'ACCESS-POINT-001',
-        type: 'access_point',
-        ipAddress: '192.168.1.50',
-        location: 'Office Floor 1',
-        criticality: 'medium',
-        position: { x: 800, y: 250 },
-        connections: ['SWITCH-002'],
-        metadata: {
-          manufacturer: 'Cisco',
-          model: 'Aironet-9120',
-          connectedDevices: 12,
-          cpu: 15,
-          memory: 20
-        }
-      }
-    ];
-
-    // Create the topology assets
-    const createdAssets = [];
-    for (let i = 0; i < networkAssets.length; i++) {
-      const assetData = networkAssets[i];
-      const asset = new Asset({
-        ...assetData,
-        assetId: `AST-${String(i + 1).padStart(4, '0')}`, // Pre-generate unique asset ID
-        status: 'online',
-        owner: 'IT Department',
-        department: 'IT',
-        hostname: `${assetData.name.toLowerCase()}.cybersec.local`,
-        macAddress: Array.from({ length: 6 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':'),
-        securityScore: Math.floor(Math.random() * 30) + 70,
-        complianceScore: Math.floor(Math.random() * 20) + 80,
-        lastSeen: new Date(),
-        tags: ['production', 'monitored', 'topology'],
-        dataClassification: 'internal',
-        securityControls: {
-          antivirus: {
-            installed: assetData.type === 'workstation' || assetData.type === 'server',
-            product: 'CyberSec Antivirus Pro',
-            version: '12.5.1',
-            lastUpdate: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-            status: 'active'
-          },
-          backups: {
-            enabled: assetData.type === 'server',
-            frequency: 'Daily',
-            lastBackup: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000),
-            retention: '30 days'
-          },
-          monitoring: {
-            enabled: true,
-            agent: 'CyberSec Agent',
-            version: '2.1.5'
-          }
-        },
-        vulnerabilities: {
-          total: Math.floor(Math.random() * 10),
-          critical: Math.floor(Math.random() * 2),
-          high: Math.floor(Math.random() * 3),
-          medium: Math.floor(Math.random() * 4),
-          low: Math.floor(Math.random() * 5)
-        },
-        patchLevel: Math.floor(Math.random() * 20) + 80,
-        lifecycle: {
-          acquisitionDate: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
-          deploymentDate: new Date(Date.now() - 300 * 24 * 60 * 60 * 1000),
-          lastMaintenanceDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          nextMaintenanceDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
-        },
-        financial: {
-          acquisitionCost: Math.floor(Math.random() * 5000) + 1000,
-          currentValue: Math.floor(Math.random() * 3000) + 500,
-          maintenanceCost: Math.floor(Math.random() * 500) + 100,
-          currency: 'USD'
-        },
-        monitoring: {
-          enabled: true,
-          intervals: {
-            heartbeat: 30,
-            performance: 300,
-            vulnerability: 86400
-          },
-          thresholds: {
-            cpu: 80,
-            memory: 85,
-            storage: 90,
-            network: 75
-          }
-        },
-        alerts: {
-          enabled: true,
-          notifications: [
-            {
-              type: 'email',
-              endpoint: 'it@cybersec.com',
-              enabled: true
-            }
-          ]
-        }
-      });
-      
-      const savedAsset = await asset.save();
-      createdAssets.push(savedAsset);
+    // Create custom network topology using the new function
+    const users = await User.find({});
+    if (users.length === 0) {
+      console.log('⚠️  No users found. Creating admin user first...');
+      const adminUser = await User.create(users[0]);
+      users.push(adminUser);
     }
-
+    
+    const assets = generateSampleAssets(users);
+    const createdAssets = await Asset.create(assets);
+    
     console.log(`✅ Created ${createdAssets.length} network topology assets`);
+    console.log('\n🌐 Network Topology Summary:');
+    console.log('  1 x Main Firewall (192.168.1.1)');
+    console.log('  1 x Core Switch (192.168.1.2)');
+    console.log('  7 x Workstations (AKMPC007, AKMPC105, AKMPC085, AKMPC047, CL101, AKMPC049, AKMPC048)');
+    console.log('  2 x Servers (File Server, Domain Controller)');
+    console.log('  1 x Printer');
     
   } catch (error) {
     console.error('❌ Error creating network topology:', error);

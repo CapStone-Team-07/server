@@ -108,9 +108,9 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', protect, userRoutes); // Fixed: use protect middleware function
-app.use('/api/threats', protect, threatRoutes); // Fixed: use protect middleware function
+app.use('/api/threats', threatRoutes); // Allow querying without protect middleware function
 app.use('/api/vulnerabilities', protect, vulnerabilityRoutes); // Fixed: use protect middleware function
-app.use('/api/assets', protect, assetRoutes); // Fixed: use protect middleware function
+app.use('/api/assets', assetRoutes); // Allow querying without protect middleware function
 app.use('/api/alerts', protect, alertRoutes); // Fixed: use protect middleware function
 app.use('/api/reports', protect, reportRoutes); // Fixed: use protect middleware function
 

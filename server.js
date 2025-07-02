@@ -156,3 +156,18 @@ process.on('uncaughtException', (err) => {
 });
 
 module.exports = app;
+
+//containment implementation
+const express = require('express');
+const ap = express();
+require('dotenv').config();
+const containmentRoutes = require('./routes/containmentRoutes');
+
+ap.use(express.json());
+
+// other routes...
+ap.use('/api/containment', containmentRoutes);
+
+// Start server
+const PORTT = process.env.PORTT || 5000;
+ap.listen(PORTT, () => console.log(`Server running on port ${PORTT}`));

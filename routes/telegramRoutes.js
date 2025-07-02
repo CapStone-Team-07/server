@@ -6,7 +6,7 @@ const { protect, auditLog } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 const telegramMessageValidation = [
-  body('chat_id').notEmpty().withMessage('Chat ID is required'),
+  body('chat_id').notEmpty().withMessage('Chat ID is required'), 
   body('text').notEmpty().withMessage('Message is required')
 ];
 

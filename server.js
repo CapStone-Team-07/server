@@ -6,7 +6,6 @@ const dotenv = require('dotenv');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
-
 // Import routes
 const authRoutes = require('./routes/authRoutes.js');
 const userRoutes = require('./routes/userRoutes.js');
@@ -15,7 +14,7 @@ const vulnerabilityRoutes = require('./routes/vulnerabilityRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const reportRoutes = require('./routes/reportRoutes');
-
+const telegramRoutes = require('./routes/telegramRoutes')
 // Import middleware - destructure the specific middleware functions we need
 const { protect } = require('./middleware/authMiddleware.js');
 const errorHandler = require('./middleware/errorHandler.js');
@@ -94,6 +93,7 @@ const connectDB = async () => {
 // Connect to database
 connectDB();
 
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -107,13 +107,15 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/users', protect, userRoutes); // Fixed: use protect middleware function
+app.use('/api/users', userRoutes); // Fixed: use protect middleware function
 app.use('/api/threats', threatRoutes); // Allow querying without protect middleware function
 app.use('/api/vulnerabilities', protect, vulnerabilityRoutes); // Fixed: use protect middleware function
 app.use('/api/assets', assetRoutes); // Allow querying without protect middleware function
 app.use('/api/alerts', protect, alertRoutes); // Fixed: use protect middleware function
 app.use('/api/reports', protect, reportRoutes); // Fixed: use protect middleware function
+app.use('/api/telegram', telegramRoutes);
 
+app.use
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({

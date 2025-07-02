@@ -274,7 +274,7 @@ const generateSampleAssets = (users) => {
     name: 'Main-Firewall',
     type: 'firewall',
     ipAddress: '192.168.1.1',
-    position: { x: 400, y: 120 },
+    position: { x: 500, y: 120 },
     criticality: 'critical',
     riskLevel: 'high',
     connections: [], // Will be populated after switch creation
@@ -309,7 +309,7 @@ const generateSampleAssets = (users) => {
     name: 'Core-Switch',
     type: 'switch',
     ipAddress: '192.168.1.2',
-    position: { x: 400, y: 250 },
+    position: { x: 500, y: 250 },
     criticality: 'high',
     riskLevel: 'medium',
     connections: [], // Will be populated after all assets are created
@@ -342,13 +342,13 @@ const generateSampleAssets = (users) => {
 
   // 3. Specific workstations with exact names and IPs from your configuration
   const pcConfigs = [
-    { name: 'AKMPC007', x: 150, y: 380, ip: '192.168.80.244' },
-    { name: 'AKMPC105', x: 280, y: 450, ip: '192.168.80.36' },
-    { name: 'AKMPC085', x: 400, y: 480, ip: '192.168.80.121' },
-    { name: 'AKMPC047', x: 520, y: 450, ip: '192.168.80.40' },
-    { name: 'CL101', x: 650, y: 380, ip: '192.168.80.220' },
-    { name: 'AKMPC049', x: 580, y: 300, ip: '192.168.80.248' },
-    { name: 'AKMPC048', x: 220, y: 300, ip: '192.168.80.222' }
+    { name: 'AKMPC007', x: 250, y: 380, ip: '192.168.80.244' },
+    { name: 'AKMPC105', x: 380, y: 450, ip: '192.168.80.36' },
+    { name: 'AKMPC085', x: 500, y: 480, ip: '192.168.80.121' },
+    { name: 'AKMPC047', x: 620, y: 450, ip: '192.168.80.40' },
+    { name: 'CL101', x: 750, y: 380, ip: '192.168.80.220' },
+    { name: 'AKMPC049', x: 780, y: 270, ip: '192.168.80.248' },
+    { name: 'AKMPC048', x: 270, y: 270, ip: '192.168.80.222' }
   ];
 
   pcConfigs.forEach((pc, index) => {
@@ -431,68 +431,68 @@ const generateSampleAssets = (users) => {
   });
 
   // Add some additional infrastructure assets to make the network more realistic
-  const additionalAssets = [
-    // File Server
-    {
-      name: 'FILE-SERVER-001',
-      type: 'server',
-      ipAddress: '192.168.1.100',
-      position: { x: 200, y: 120 },
-      criticality: 'high',
-      location: 'IT-Room',
-      operatingSystem: 'Windows Server 2019',
-      metadata: {
-        cpu: 45,
-        memory: 65,
-        storage: 85,
-        user: 'File Server',
-        manufacturer: 'Dell',
-        model: 'PowerEdge-R740'
-      },
-      connections: []
-    },
-    // Domain Controller
-    {
-      name: 'DC-001',
-      type: 'server',
-      ipAddress: '192.168.1.101',
-      position: { x: 600, y: 120 },
-      criticality: 'critical',
-      location: 'IT-Room',
-      operatingSystem: 'Windows Server 2019',
-      metadata: {
-        cpu: 35,
-        memory: 55,
-        storage: 40,
-        user: 'Domain Controller',
-        manufacturer: 'HP',
-        model: 'ProLiant-DL380'
-      },
-      connections: []
-    },
-    // Printer
-    {
-      name: 'PRINTER-001',
-      type: 'printer',
-      ipAddress: '192.168.80.100',
-      position: { x: 400, y: 380 },
-      criticality: 'low',
-      location: 'Office-Floor1',
-      operatingSystem: 'Embedded Linux',
-      metadata: {
-        manufacturer: 'HP',
-        model: 'LaserJet-Pro-4001n',
-        connectedDevices: 7
-      },
-      connections: []
-    }
-  ];
+  // const additionalAssets = [
+  //   // File Server
+  //   {
+  //     name: 'FILE-SERVER-001',
+  //     type: 'server',
+  //     ipAddress: '192.168.1.100',
+  //     position: { x: 200, y: 120 },
+  //     criticality: 'high',
+  //     location: 'IT-Room',
+  //     operatingSystem: 'Windows Server 2019',
+  //     metadata: {
+  //       cpu: 45,
+  //       memory: 65,
+  //       storage: 85,
+  //       user: 'File Server',
+  //       manufacturer: 'Dell',
+  //       model: 'PowerEdge-R740'
+  //     },
+  //     connections: []
+  //   },
+  //   // Domain Controller
+  //   {
+  //     name: 'DC-001',
+  //     type: 'server',
+  //     ipAddress: '192.168.1.101',
+  //     position: { x: 600, y: 120 },
+  //     criticality: 'critical',
+  //     location: 'IT-Room',
+  //     operatingSystem: 'Windows Server 2019',
+  //     metadata: {
+  //       cpu: 35,
+  //       memory: 55,
+  //       storage: 40,
+  //       user: 'Domain Controller',
+  //       manufacturer: 'HP',
+  //       model: 'ProLiant-DL380'
+  //     },
+  //     connections: []
+  //   },
+  //   // Printer
+  //   {
+  //     name: 'PRINTER-001',
+  //     type: 'printer',
+  //     ipAddress: '192.168.80.100',
+  //     position: { x: 400, y: 380 },
+  //     criticality: 'low',
+  //     location: 'Office-Floor1',
+  //     operatingSystem: 'Embedded Linux',
+  //     metadata: {
+  //       manufacturer: 'HP',
+  //       model: 'LaserJet-Pro-4001n',
+  //       connectedDevices: 7
+  //     },
+  //     connections: []
+  //   }
+  // ];
 
-  additionalAssets.forEach(asset => {
-    const additionalAsset = createBaseAsset(asset);
-    assets.push(additionalAsset);
-    assetRegistry[asset.name] = additionalAsset;
-  });
+  // additionalAssets.forEach(asset => {
+  //   const additionalAsset = createBaseAsset(asset);
+  //   assets.push(additionalAsset);
+  //   assetRegistry[asset.name] = additionalAsset;
+  // });
 
   // Now establish all connections using asset IDs (not names)
   // Firewall connects to switch
@@ -502,10 +502,10 @@ const generateSampleAssets = (users) => {
   // Switch connects to all workstations and servers
   switchAsset.connections = [
     firewallAsset.assetId,
-    ...pcConfigs.map(pc => assetRegistry[pc.name].assetId),
-    assetRegistry['FILE-SERVER-001'].assetId,
-    assetRegistry['DC-001'].assetId,
-    assetRegistry['PRINTER-001'].assetId
+    ...pcConfigs.map(pc => assetRegistry[pc.name].assetId)//,
+    // assetRegistry['FILE-SERVER-001'].assetId,
+    // assetRegistry['DC-001'].assetId,
+    // assetRegistry['PRINTER-001'].assetId
   ];
   switchAsset.dependencies = [
     {
@@ -534,22 +534,22 @@ const generateSampleAssets = (users) => {
   });
 
   // Servers connect to switch and depend on firewall
-  ['FILE-SERVER-001', 'DC-001', 'PRINTER-001'].forEach(serverName => {
-    const server = assetRegistry[serverName];
-    server.connections = [switchAsset.assetId];
-    server.dependencies = [
-      {
-        assetId: switchAsset.assetId,
-        relationship: 'connected_to',
-        description: 'Network access'
-      },
-      {
-        assetId: firewallAsset.assetId,
-        relationship: 'depends_on',
-        description: 'Security protection'
-      }
-    ];
-  });
+  // ['FILE-SERVER-001', 'DC-001', 'PRINTER-001'].forEach(serverName => {
+  //   const server = assetRegistry[serverName];
+  //   server.connections = [switchAsset.assetId];
+  //   server.dependencies = [
+  //     {
+  //       assetId: switchAsset.assetId,
+  //       relationship: 'connected_to',
+  //       description: 'Network access'
+  //     },
+  //     {
+  //       assetId: firewallAsset.assetId,
+  //       relationship: 'depends_on',
+  //       description: 'Security protection'
+  //     }
+  //   ];
+  // });
 
   return assets;
 };

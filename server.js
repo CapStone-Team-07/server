@@ -157,17 +157,9 @@ process.on('uncaughtException', (err) => {
 
 module.exports = app;
 
-//containment implementation
-const express = require('express');
-const ap = express();
-require('dotenv').config();
-const containmentRoutes = require('./routes/containmentRoutes');
 
-ap.use(express.json());
+//chatbot implementation
+const chatbotRoutes = require('./routes/chatbotRoutes');
 
-// other routes...
-ap.use('/api/containment', containmentRoutes);
-
-// Start server
-const PORTT = process.env.PORTT || 5000;
-ap.listen(PORTT, () => console.log(`Server running on port ${PORTT}`));
+// Add this line with your other routes
+app.use('/api/chatbot', chatbotRoutes);

@@ -6,7 +6,6 @@ const TELEGRAM_BOT_TOKEN = "7450160783:AAHmgSRlPQR_CxEUz8grqlZXSNLpVrxCHTA";
 
 exports.sendTelegramMessage = async (req, res) => {
   try {
-    // Validate input
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({

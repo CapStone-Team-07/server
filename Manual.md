@@ -80,3 +80,10 @@ curl http://192.168.0.193:5000/api/threats -H "Authorization: Bearer $JWT" | jq
 ```
 
 ### Creating an Asset
+
+
+### Telegram Chatids
+Stored: @Elvinnsuleymanov = 1530374052
+Stored: @Gulyazizade = 1947654367
+Stored: @Juliusvault = 1062394539
+Stored: @arifmamadov = 1947715194

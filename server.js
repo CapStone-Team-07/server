@@ -113,6 +113,11 @@ app.use('/api/vulnerabilities', protect, vulnerabilityRoutes); // Fixed: use pro
 app.use('/api/assets', assetRoutes); // Allow querying without protect middleware function
 app.use('/api/alerts', protect, alertRoutes); // Fixed: use protect middleware function
 app.use('/api/reports', protect, reportRoutes); // Fixed: use protect middleware function
+//chatbot implementation
+const chatbotRoutes = require('./routes/chatbotRoutes');
+
+// Add this line with your other routes
+app.use('/api/chatbot', chatbotRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -158,8 +163,3 @@ process.on('uncaughtException', (err) => {
 module.exports = app;
 
 
-//chatbot implementation
-const chatbotRoutes = require('./routes/chatbotRoutes');
-
-// Add this line with your other routes
-app.use('/api/chatbot', chatbotRoutes);

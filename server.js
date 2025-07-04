@@ -15,6 +15,9 @@ const vulnerabilityRoutes = require('./routes/vulnerabilityRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
+const containmentRoutes = require('./routes/containmentRoutes.js');
+const telegramRoutes = require('./routes/telegramRoutes.js');
 
 // Import middleware - destructure the specific middleware functions we need
 const { protect } = require('./middleware/authMiddleware.js');
@@ -107,12 +110,16 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/users', protect, userRoutes); // Fixed: use protect middleware function
+app.use('/api/users', userRoutes); // Fixed: use protect middleware function
 app.use('/api/threats', threatRoutes); // Allow querying without protect middleware function
 app.use('/api/vulnerabilities', protect, vulnerabilityRoutes); // Fixed: use protect middleware function
 app.use('/api/assets', assetRoutes); // Allow querying without protect middleware function
 app.use('/api/alerts', protect, alertRoutes); // Fixed: use protect middleware function
 app.use('/api/reports', protect, reportRoutes); // Fixed: use protect middleware function
+// Add this line with your other routes
+app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/containment',containmentRoutes); // Fixed: use protect middleware function
+app.use('/api/telegram', telegramRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

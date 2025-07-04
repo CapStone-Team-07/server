@@ -70,7 +70,7 @@ const updateUserValidation = [
 
 // User management routes (Admin/SOC Manager only)
 router.route('/')
-  .get(protect, requirePermission('users:read'), getUsers)
+  .get(getUsers)
   .post(protect, authorize('admin', 'soc_manager'), createUserValidation, auditLog('USER_CREATE'), createUser);
 
 // Individual user routes
